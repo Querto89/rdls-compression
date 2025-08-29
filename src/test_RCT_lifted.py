@@ -7,8 +7,9 @@ def forward_RCT(img):
     B = img[:,:,0].astype(np.int32)
     
     Co = R - B
-    Cg = G - ( B + (Co >> 1) )
-    Y = ( B + (Co >> 1) ) + (Cg >> 1)
+    t = B + (Co >> 1)
+    Cg = G - t
+    Y = t + (Cg >> 1)
     
     return np.stack((Y, Co, Cg), axis=2).astype(np.int32)
 
@@ -17,8 +18,9 @@ def inverse_RCT(rct_img):
     Co = rct_img[:,:,1].astype(np.int32)
     Cg = rct_img[:,:,2].astype(np.int32)
     
-    G = Cg + ( Y - (Cg >> 1) )
-    B = ( Y - (Cg >> 1) ) - (Co >> 1)
+    t = Y - (Cg >> 1)
+    G = Cg + t
+    B = t - (Co >> 1)
     R = B + Co
     
     return np.stack((B, G, R), axis=2).astype(np.uint8)
