@@ -1,32 +1,59 @@
 import numpy as np
-import cv2
+import imageio.v3 as iio
+import matplotlib.pyplot as plt
+from skimage.metrics import peak_signal_noise_ratio
 
 def forward_RCT(img):
-    R = img[:,:,2].astype(np.int32)
+    R = img[:,:,0].astype(np.int32)
     G = img[:,:,1].astype(np.int32)
-    B = img[:,:,0].astype(np.int32)
+    B = img[:,:,2].astype(np.int32)
     
-    Cu = B - G
-    Cv = R - G
-    Y = G + np.floor((Cu+Cv)>>2)
+    Co = R - B
+    t = B + (Co>>1)
+    Cg = G - t
+    Y = t + (Cg>>1)
     
-    return np.stack((Y, Cu, Cv), axis=2).astype(np.int32)
+    return np.stack((Y, Co, Cg), axis=2).astype(np.int32)
 
 def inverse_RCT(rct_img):
     Y  = rct_img[:,:,0].astype(np.int32)
-    Cu = rct_img[:,:,1].astype(np.int32)
-    Cv = rct_img[:,:,2].astype(np.int32)
+    Co = rct_img[:,:,1].astype(np.int32)
+    Cg = rct_img[:,:,2].astype(np.int32)
     
-    G = Y - np.floor((Cu+Cv)>>2)
-    R = Cv + G
-    B = Cu + G
-    
-    return np.stack((B, G, R), axis=2).astype(np.uint8)
+    t = Y - np.floor(Cg>>1)
+    G = Cg + t
+    B = t - (Co >> 1)
+    R = B + Co
 
-# Test odwrotności
-img = cv2.imread('data/natural/kodim01.png')  # przykładowy obraz
+    return np.stack((R, G, B), axis=2).astype(np.uint8)
+
+img = iio.imread('data/natural/kodim01.png')  # przykładowy obraz
 rct = forward_RCT(img)
 rec = inverse_RCT(rct)
 
+# Obliczenie PSNR
+psnr_value = peak_signal_noise_ratio(img, rec, data_range=255)
+print("PSNR:", psnr_value)
 diff = np.abs(img.astype(np.int32) - rec.astype(np.int32))
-print("Maksymalna różnica:", diff.max())
+print("\nMaksymalna różnica:", diff.max())
+
+# Tworzenie figury z dwoma obrazami
+fig, axes = plt.subplots(1, 2, figsize=(10, 5))
+
+axes[0].imshow(img)
+axes[0].set_title("Oryginał")
+axes[0].axis("off")
+
+axes[1].imshow(rec)
+axes[1].set_title("Rekonstrukcja")
+axes[1].axis("off")
+
+# Dodanie PSNR jako tekstu globalnego pod obrazami
+fig.text(0.5, 0.1, f"PSNR: {psnr_value:.2f} dB", ha='center', fontsize=12)
+fig.text(0.5, 0.05, f"Max difference: {diff.max():.2f}", ha='center', fontsize=12)
+
+# Dopasowanie layoutu i zapis PNG
+plt.tight_layout(pad=0.5)
+fig.savefig("porownanie_psnr.png", bbox_inches='tight', pad_inches=0.1, dpi=150)
+plt.show()
+
