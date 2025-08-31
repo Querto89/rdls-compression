@@ -8,23 +8,22 @@ def forward_RCT(img):
     G = img[:,:,1].astype(np.int32)
     B = img[:,:,2].astype(np.int32)
     
-    Cu = B - G
-    Cv = R - G
-    t = np.floor( (Cu + Cv) >> 2 )
-    Y = G + t
+    Y  = (R + 2*G + B) >> 2
+    Co = (R - B) >> 1
+    Cg = (-R + 2*G - B) >> 2
     
-    return np.stack((Y, Cu, Cv), axis=2).astype(np.int32)
+    return np.stack((Y, Co, Cg), axis=2).astype(np.int32)
 
 def inverse_RCT(rct_img):
     Y  = rct_img[:,:,0].astype(np.int32)
-    Cu = rct_img[:,:,1].astype(np.int32)
-    Cv = rct_img[:,:,2].astype(np.int32)
-
-    t = np.floor( ( Cu + Cv ) >> 2 )
-    G = Y - t
-    R = Cv + G
-    B = Cu + G
-
+    Co = rct_img[:,:,1].astype(np.int32)
+    Cg = rct_img[:,:,2].astype(np.int32)
+    
+    t = Y - Cg
+    R = t + Co
+    G = Y + Cg
+    B = t - Co
+    
     return np.stack((R, G, B), axis=2).astype(np.uint8)
 
 img = iio.imread('data/natural/kodim01.png')  # przykładowy obraz
