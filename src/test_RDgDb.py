@@ -3,9 +3,9 @@ import imageio.v3 as iio
 from tester import compare_images
 
 def forward_RDgDb(img):
-    R = img[:,:,2].astype(np.int32)
+    R = img[:,:,0].astype(np.int32)
     G = img[:,:,1].astype(np.int32)
-    B = img[:,:,0].astype(np.int32)
+    B = img[:,:,2].astype(np.int32)
    
     Dg = R - G
     Db = G - B
@@ -19,7 +19,7 @@ def inverse_RDgDb(rdgd_img):
     
     G = R - Dg
     B = G - Db
-    return np.stack((B, G, R), axis=2).astype(np.uint8)
+    return np.stack((R, G, B), axis=2).astype(np.uint8)
 
 img = iio.imread('data/natural/kodim01.png')  # przykładowy obraz
 rdgdb = forward_RDgDb(img)
