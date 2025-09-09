@@ -6,7 +6,8 @@ import matplotlib.gridspec as gridspec
 
 def compare_images(img_orig: np.ndarray, img_rec: np.ndarray, title=""):
     # --- Test PSNR
-    psnr_value = PSNR(img_orig, img_rec, data_range=255)
+    data_range = img_orig.max() - img_orig.min()
+    psnr_value = PSNR(img_orig, img_rec, data_range=data_range)
     psnr_result = f"PSNR = {psnr_value:.2f} dB"
 
     # --- Test zgodności bitowej
@@ -40,12 +41,12 @@ def compare_images(img_orig: np.ndarray, img_rec: np.ndarray, title=""):
 
     # --- górny rząd: obrazy
     ax0 = fig.add_subplot(gs[0,0])
-    ax0.imshow(img_orig, cmap='gray')
+    ax0.imshow(img_orig)
     ax0.set_title("Oryginalny")
     ax0.axis('off')
 
     ax1 = fig.add_subplot(gs[0,1])
-    ax1.imshow(img_rec, cmap='gray')
+    ax1.imshow(img_rec)
     ax1.set_title("Zrekonstruowany")
     ax1.axis('off')
 
