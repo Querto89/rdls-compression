@@ -11,17 +11,20 @@ def apply_filter(channel: np.ndarray, method: str = "bilateral", params: dict = 
             d = params.get("d", 5)
             sigmaColor = params.get("sigmaColor", 0.1)  # już w skali [0,1]
             sigmaSpace = params.get("sigmaSpace", 5)
-            result = cv2.bilateralFilter(channel.astype(np.float64), d, sigmaColor, sigmaSpace)
+            result = cv2.bilateralFilter(channel, d, sigmaColor, sigmaSpace)
 
         case "gaussian":
             ksize = params.get("ksize", 5)
             sigma = params.get("sigma", 1.0)
-            result = cv2.GaussianBlur(channel.astype(np.float64), (ksize, ksize), sigma)
+            result = cv2.GaussianBlur(channel, (ksize, ksize), sigma)
 
         case "median":
             ksize = params.get("ksize", 3)
+            # upewniamy się, że kanał jest 2D
+            if channel.ndim != 2:
+                raise ValueError("median filter works only on 2D single channel")
             tmp = (channel * 255).clip(0, 255).astype(np.uint8)
-            result = cv2.medianBlur(tmp, ksize).astype(np.float64) / 255.0
+            result = cv2.medianBlur(tmp, ksize).astype(np.float32) / 255.0
 
         case "nl_means":
             patch_kw = dict(patch_size=5, patch_distance=6, h=0.1, fast_mode=True)
@@ -39,7 +42,7 @@ def apply_filter(channel: np.ndarray, method: str = "bilateral", params: dict = 
         case _:
             raise ValueError(f"Nieznany filtr: {method}")
 
-    return result.astype(np.float64)
+    return result
 
 """
 Przykładowe wywołanie funkcji apply_filter dla każdego rodzaju filtra

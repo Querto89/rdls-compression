@@ -9,14 +9,14 @@ def merge_channels(B, G, R):
     return np.stack((B, G, R), axis=2).astype(np.uint8)
 
 def _to_float01(img):
-    """Konwertuje wejście do float64 w zakresie [0,1] oraz zwraca metadane do odtworzenia dtype/range."""
+    """Konwertuje wejście do float32 w zakresie [0,1] oraz zwraca metadane do odtworzenia dtype/range."""
     dtype = img.dtype
     if np.issubdtype(dtype, np.floating):
         # zakładamy, że floaty już w [0,1] (jeśli nie, użytkownik powinien skalować)
-        return img.astype(np.float64), dtype, 1.0
+        return img.astype(np.float32), dtype, 1.0
     # dla typów całkowitych (np. uint8, uint16)
     info_max = np.iinfo(dtype).max
-    return img.astype(np.float64) / info_max, dtype, info_max
+    return img.astype(np.float32) / info_max, dtype, info_max
 
 def _from_float01(img_float, orig_dtype, orig_max, clip=True):
     """Konwertuje float [0,1] z powrotem do orig_dtype."""

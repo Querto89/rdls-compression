@@ -6,9 +6,9 @@ def forward_RCT(img):
     G = img[:,:,1]
     B = img[:,:,2]
     
-    Cu = B - G
     Cv = R - G
-    Y = G + np.floor((Cu + Cv)/4)
+    Cu = B - G
+    Y = G + np.floor((Cv + Cu)/4)
     
     return np.stack((Y, Cu, Cv), axis=2)
 
@@ -18,8 +18,8 @@ def inverse_RCT(rct_img):
     Cv = rct_img[:,:,2]
 
     G = Y - np.floor((Cu + Cv)/4)
-    R = Cv + G
     B = Cu + G
+    R = Cv + G
 
     return np.stack((R, G, B), axis=2)
 
@@ -103,8 +103,8 @@ def forward_RCT_RDLS(img, method, params: dict = None):
 
 def inverse_RCT_RDLS(rct_img, method, params: dict = None):
     Y  = rct_img[:,:,0]
-    Cv = rct_img[:,:,1]
-    Cu = rct_img[:,:,2]
+    Cu = rct_img[:,:,1]
+    Cv = rct_img[:,:,2]
 
     Cvd = apply_filter(Cv,method,params)
     Cud = apply_filter(Cu,method,params)
