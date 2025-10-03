@@ -15,9 +15,13 @@ def initialize():
     if not db_exists:
         cursor.execute('''
         CREATE TABLE images (
-            id INTEGER PRIMARY K,
+            id INTEGER PRIMARY KEY,
             image TEXT NOT NULL,
-            transformation TEXT NOT NULL
+            transformation TEXT NOT NULL,
+            filter TEXT NOT NULL,
+            noise TEXT NOT NULL,
+            format TEXT NOT NULL
+        );
         ''')
 
         cursor.execute('''
@@ -37,7 +41,7 @@ def initialize():
         ''')
 
         cursor.execute('''
-        CREATE TABLE entropy_results (
+        CREATE TABLE measurments_results (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             H0 FLOAT NOT NULL,
             H1 FLOAT NOT NULL,
@@ -46,13 +50,7 @@ def initialize():
             H0_B FLOAT,
             psnr FLOAT,
             bit_perfect INTEGER,
-            hash_equal INTEGER
-        );
-        ''')
-
-        cursor.execute('''
-        CREATE TABLE compression_results (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            hash_equal INTEGER,
             format TEXT NOT NULL,
             file_size_bytes INTEGER NOT NULL,
             compression_ratio FLOAT,
@@ -67,5 +65,14 @@ def initialize():
 
     return conn, cursor
 
-def db_save_image(cursor,id,image,color_space_transformation):
-    cursor.execute("INSERT INTO images (id,images,transformation) VALUES (?, ?, ?)", (id,image,color_space_transformation))#Zapisanie wybranego obrazu do tablicy images
+def db_save_image(cursor,id,image,color_space_transformation,filter_name,noise_name, compression_format):
+    cursor.execute("INSERT INTO images (id,image,transformation,filter,noise,format) VALUES (?, ?, ?, ?, ?, ?)", (id,image,color_space_transformation,filter_name,noise_name,compression_format))
+
+def db_save_noise(cursor,id,noise_name,noise_params):
+    cursor.execute("INSERT INTO noises (id,name,params) VALUES (?, ?, ?)", (id,noise_name,noise_params))
+
+def db_save_filter(cursor,id,filter_name,filter_params):
+    cursor.execute("INSERT INTO filters (id,name,params) VALUES (?, ?, ?)", (id,filter_name,filter_params))
+
+def db_save_measurments_results(cursor,id,H0,H1,H0_R,H0_G,H0_B,psnr,bit_perfect,hash_equal,compression_format,file_size_bytes,compression_ratio,bpp):
+    cursor.execute("INSERT INTO measurments_results (id,H0,H1,H0_R,H0_G,H0_B,psnr,bit_perfect,hash_equal,format,file_size_bytes,compression_ratio,bpp) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)", (id,H0,H1,H0_R,H0_G,H0_B,psnr,bit_perfect,hash_equal,compression_format,file_size_bytes,compression_ratio,bpp))

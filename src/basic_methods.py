@@ -6,7 +6,7 @@ from color_space_transforms import color_space_transform
 from img_compares import compare_images
 from utils import _to_float01, _from_float01
 from noise_generator import add_noise
-from database import initialize, db_save_image
+from database import initialize, db_save_image, db_save_noise, db_save_filter, db_save_measurments_results
 from entropy import get_entropy, get_channel_entropy
 from compressor import make_compress
 
@@ -32,101 +32,100 @@ color_transformation_list = [
     'RCT',
     'LDgEb',
     'YCoCg-R',
-    'RDgDb' 
+    'RDgDb',
+    'RDLS-RCT',
+    'RDLS-LDgEb',
+    'RDLS-YCoCg-R',
+    'RDLS-RDgDb' 
+]
+
+compression_formats_list = [
+    'JPEG 2000',
+    'JPEG XL',
+    'HEVC',
+    'VVC'
 ]
 
 #Baza parametrów filtrów
-filters_names_list = [
-    'bilateral',
-    'gaussian',
-    'median',
-    'nl_means',
-    'wavelet'
-] 
-default_filter_params = {
-    'bilateral_d': 7,
-    'bilateral_sigmaColor': 0.1, #Parametr iterowany w zakresie 0.05-0.3 z krokiem 0.05
-    'bilateral_sigmaSpace': 5,
-    'gaussian_ksize': 5,
-    'gaussian_sigma': 5, #Parametr iterowany w zakresie 0.5-3.0 z krokiem 0.5
-    'median_ksize': 3, #Parametr iterowany w zakresie 3-9 z krokiem 2
-    'nl_means_h': 0.1, #Parametr iterowany w zakresie 0.05-0.3 z krokiem 0.05
-    'nl_means_patch_size': 5,
-    'nl_means_patch_distance': 6,
-    'wavelet_sigma': 0.05, #Parametr iterowany w zakresie 0.01-0.1 z krokiem 0.01
-    'wavelet_mode': "soft"
+filter_configs = {
+    "bilateral": {
+        "values": np.arange(0.05, 0.35, 0.05).tolist(),
+        "params": {"d": 7, "sigmaColor": None, "sigmaSpace": 5}
+    },
+    "gaussian": {
+        "values": np.arange(0.5,3.5,0.5).tolist(),
+        "params": {"ksize": 5, "sigma": None}
+    },
+    "median": {
+        "values": np.arange(3,11,2).tolist(),
+        "params": {"ksize": None}
+    },
+    "nl_means": {
+        "values": np.arange(0.05,0.35,0.05).tolist(),
+        "params": {"h": None, 'patch_size': 5, 'patch_distance':6}
+    },
+    "wavelet": {
+        "values": np.arange(0.01,0.11,0.01).tolist(),
+        "params": {"sigma": None, "mode": "soft"}
+    }
 }
-
-bilateral_sigmaColor_values = np.arange(0.05, 0.35, 0.05).tolist()
-gaussian_sigma_values = np.arange(0.5,3.5,0.5).tolist()
-median_ksize_values = list(range(3,11,2))
-nl_means_h_values = np.arange(0.05,0.35,0.05).tolist()
-wavelet_sigma = np.arange(0.01,0.11,0.01).tolist()
 
 #Baza parametrów szumów
 seed = 42
-noises_names_list = [
-    'gaussian',
-    'poisson',
-    'shot',
-    'read',
-    'shot_read'
-]
-
-default_noises_params = {
-    'gaussian_mean': 0.0,
-    'gaussian_sigma': 0.05, #Parametr iterowany w zakresie 0.01-0.1 z krokiem 0.01
-    'poisson_peak': 100.0, #Parametr iterowany w zakresie 50-150 z krokiem 25
-    'shot_lam': 80.0, #Parametr iterowany w zakresie 40-120 z krokiem 20
-    'read_sigma': 0.01, #Parametr iterowany w zakresie 0.005-0.02 z krokiem 0.005
-    'shot_read_gain': 200.0, 
-    'shot_read_noise_std': 2.0, #Parametr iterowany w zakresie 1-4 z krokiem 1
+noise_configs = {
+    "gaussian": {
+        "values": np.arange(0.01,0.1,0.01).tolist(),
+        "params": {"sigma": None, "mean": 0.0}
+    },
+    "poisson": {
+        "values": np.arange(50.0,150.0,25.0).tolist(),
+        "params": {"peak": None}
+    },
+    "shot": {
+        "values": np.arange(40.0,120.0,20.0).tolist(),
+        "params": {"lam": None}
+    },
+    "read": {
+        "values": np.arange(0.005,0.02,0.005).tolist(),
+        "params": {"sigma": None}
+    },
+    "shot_read": {
+        "values": np.arange(1.0,4.0,1.0).tolist(),
+        "params": {"gain": 200.0, "read_noise_std": None}
+    }
 }
 
-gaussian_sigma_values = np.arange(0.01,0.1,0.01).tolist()
-poisson_peak_values = list(range(50,150,25))
-shot_lam_values = np.arange(40,120,20).tolist()
-read_sigma_values = np.arange(0.005,0.02,0.005).tolist()
-shot_read_sigma_values = list(range(1,4,1))
-
 for image_name in images_set:
-    cursor.execute('SELECT MAX(id) FROM images')
-    row = cursor.fetchone()   # zwróci np. (5,) jeśli ostatni ID = 5
-    current_max_id = row[0] if row[0] is not None else 0
+    img_org = iio.imread('data/natural/'+image_name)
+    img_org_f, orig_dtype, orig_max = _to_float01(img_org)
     for transformation_name in color_transformation_list:
-        NO_RDLS_transform = transformation_name
-        RDLS_transform = "RDLS-"+transformation_name 
-        img_org = iio.imread('data/natural/'+image_name)
-        img_org_f, orig_dtype, orig_max = _to_float01(img_org)
-        for noise_name in noises_names_list:
-            match(noise_name):
-                case "gaussian":
-                    noise_param_values_list = gaussian_sigma_values
-                    noise_params = {
-                        "first_param": None,
-                        "second_param": default_noises_params['gaussian_mean']
-                    }
-                case "poisson":
-                    noise_param_values_list = poisson_peak_values
-                    noise_params = {
-                        "first_param": None
-                    }
-                case "shot":
-                    noise_param_values_list = shot_lam_values
-                    noise_params = {
-                        "first_param": None
-                    }
-                case "read":
-                    noise_param_values_list = read_sigma_values
-                    noise_params = {
-                        "first_param": None
-                    }
-                case "shot_read":
-                    noise_param_values_list = shot_read_sigma_values
-                    noise_params = {
-                        "first_param": None,
-                        "second_param": default_noises_params['shot_read_gain']
-                    }
-            for param in noise_param_values_list:
-                noise_params['first_param']=param
-                img_noise = add_noise(img_org_f, noise_name, noise_params, seed)
+        for noise_name, noise_cfg in noise_configs.items():
+            for val in noise_cfg["values"]:
+                noise_params = noise_cfg["params"].copy()
+                for noise_param_name, noise_param_value in noise_params.items():
+                    if noise_param_value is None:
+                        noise_params[noise_param_name] = val
+                        img_noise = add_noise(img_org_f, noise_name, noise_params, seed)
+                        img_noise_u8 = _from_float01(img_noise,orig_dtype,orig_max)
+                        for filter_name, filter_cfg in filter_configs.items():
+                            for val in filter_cfg["values"]:
+                                filter_params = filter_cfg["params"].copy()
+                                for filter_param_name, filter_param_value in filter_params.items():
+                                    if filter_param_value is None:
+                                        filter_params[filter_param_name] = val
+                                        img_rec = color_space_transform(img_noise, transformation_name, filter_name, filter_params)
+                                        img_rec_u8 = _from_float01(img_rec,orig_dtype,orig_max)
+                                        entropy = get_entropy(img_rec_u8, transformation_name, image_name)
+                                        channel_h0 = get_channel_entropy(img_rec_u8)
+                                        for compression_format in compression_formats_list:
+                                            comp_results = make_compress(img_rec, image_name, compression_format)
+                                            cursor.execute('SELECT MAX(id) FROM images')
+                                            row = cursor.fetchone()
+                                            current_max_id = row[0] if row[0] is not None else 0
+                                            id = current_max_id + 1
+                                            db_save_image(cursor,id,image_name,transformation_name,filter_name,noise_name,compression_format)
+                                            db_save_noise(cursor,id,noise_name,json.dumps(noise_params))
+                                            db_save_filter(cursor,id,filter_name,json.dumps(filter_params))
+                                            db_save_measurments_results(cursor,id,entropy['H0'],entropy['H1'],channel_h0['R_H0'],channel_h0['G_H0'],channel_h0['B_H0'],comp_results['psnr'],comp_results['bit_perfect'],comp_results['hash_equal'],compression_format,comp_results['size'],comp_results['compression_ratio'],comp_results['bpp'])
+                                            conn.commit()
+conn.close()

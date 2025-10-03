@@ -57,7 +57,10 @@ def get_entropy(data: np.ndarray, method_name: str, image_name: str):
     h0 = entropy_H0(data)
     h1 = entropy_H1(data)
 
-    return h0,h1
+    return {
+        "H0": h0,
+        "H1": h1
+    }
 
 def get_channel_entropy(img: np.ndarray):
     """

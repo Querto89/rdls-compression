@@ -13,29 +13,29 @@ def add_noise(img: np.ndarray, method: str, params: dict | None = None, seed: in
     noisy = None
     match method.lower():
         case "gaussian":
-            sigma = params.get("first_param", 0.0)
-            mean = params.get("second_param", 0.05)
+            sigma = params.get("sigma", 0.0)
+            mean = params.get("mean", 0.05)
             noise = rng.normal(loc=mean, scale=sigma, size=img.shape)
             noisy = img + noise
 
         case "poisson":
-            peak = params.get("first_param", 50.0)   # im większy peak, tym mniej względnego szumu
+            peak = params.get("peak", 50.0)   # im większy peak, tym mniej względnego szumu
             lam = np.clip(img * peak, 0, None)
             noisy = rng.poisson(lam) / peak
 
         case "shot":  # alias na poisson
-            lam = params.get("first_param", 50.0)
+            lam = params.get("lam", 50.0)
             lam = np.clip(img * lam, 0, None)
             noisy = rng.poisson(lam) / lam.max()  # normalizacja
 
         case "read":  # czysto Gaussowski szum odczytu
-            sigma = params.get("first_param", 0.01)
+            sigma = params.get("sigma", 0.01)
             noise = rng.normal(loc=0.0, scale=sigma, size=img.shape)
             noisy = img + noise
 
         case "shot_read":  # Poisson + Gaussian
-            gain = params.get("first_param", 100.0)
-            read_noise_std = params.get("second_param", 1.0)
+            gain = params.get("gain", 100.0)
+            read_noise_std = params.get("read_noise_std", 1.0)
             lam = np.clip(img * gain, 0, None)
             shot = rng.poisson(lam)
             read = rng.normal(loc=0.0, scale=read_noise_std, size=img.shape)
