@@ -118,14 +118,11 @@ for image_name in images_set:
                                         entropy = get_entropy(img_rec_u8, transformation_name, image_name)
                                         channel_h0 = get_channel_entropy(img_rec_u8)
                                         for compression_format in compression_formats_list:
-                                            comp_results = make_compress(img_rec, image_name, compression_format)
-                                            cursor.execute('SELECT MAX(id) FROM images')
-                                            row = cursor.fetchone()
-                                            current_max_id = row[0] if row[0] is not None else 0
-                                            id = current_max_id + 1
-                                            db_save_image(cursor,id,image_name,transformation_name,filter_name,noise_name,compression_format)
-                                            db_save_noise(cursor,id,noise_name,json.dumps(noise_params))
-                                            db_save_filter(cursor,id,filter_name,json.dumps(filter_params))
-                                            db_save_measurments_results(cursor,id,entropy['H0'],entropy['H1'],channel_h0['R_H0'],channel_h0['G_H0'],channel_h0['B_H0'],comp_results['psnr'],comp_results['bit_perfect'],comp_results['hash_equal'],compression_format,comp_results['size'],comp_results['compression_ratio'],comp_results['bpp'])
+                                            compress_results = make_compress(img_rec_u8, image_name, compression_format)
+                                            compare_results = compare_images(img_org, img_rec_u8)
+                                            db_save_image(cursor,image_name,transformation_name,filter_name,noise_name,compression_format)
+                                            db_save_noise(cursor,noise_name,json.dumps(noise_params))
+                                            db_save_filter(cursor,filter_name,json.dumps(filter_params))
+                                            db_save_measurments_results(cursor,entropy['H0'],entropy['H1'],channel_h0['R_H0'],channel_h0['G_H0'],channel_h0['B_H0'],compare_results['psnr'],compare_results['bit_perfect'],compare_results['hash_equal'],compression_format,compress_results['size'],compress_results['compression_ratio'],compress_results['bpp'])
                                             conn.commit()
 conn.close()

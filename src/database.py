@@ -4,7 +4,7 @@ import os
 import pandas as pd
 from openpyxl import load_workbook
 
-DB_FILE = 'db/rdls_db.db'
+DB_FILE = 'db/rdls_basic_methods_db.db'
 
 def initialize():
     """Inicjalizuje bazę danych i zwraca połączenie oraz kursor."""
@@ -65,14 +65,14 @@ def initialize():
 
     return conn, cursor
 
-def db_save_image(cursor,id,image,color_space_transformation,filter_name,noise_name, compression_format):
-    cursor.execute("INSERT INTO images (id,image,transformation,filter,noise,format) VALUES (?, ?, ?, ?, ?, ?)", (id,image,color_space_transformation,filter_name,noise_name,compression_format))
+def db_save_image(cursor,image,color_space_transformation,filter_name,noise_name, compression_format):
+    cursor.execute("INSERT INTO images (image,transformation,filter,noise,format) VALUES (?, ?, ?, ?, ?)", (image,color_space_transformation,filter_name,noise_name,compression_format))
 
-def db_save_noise(cursor,id,noise_name,noise_params):
-    cursor.execute("INSERT INTO noises (id,name,params) VALUES (?, ?, ?)", (id,noise_name,noise_params))
+def db_save_noise(cursor,noise_name,noise_params):
+    cursor.execute("INSERT INTO noises (name,params) VALUES (?, ?)", (noise_name,noise_params))
 
-def db_save_filter(cursor,id,filter_name,filter_params):
-    cursor.execute("INSERT INTO filters (id,name,params) VALUES (?, ?, ?)", (id,filter_name,filter_params))
+def db_save_filter(cursor,filter_name,filter_params):
+    cursor.execute("INSERT INTO filters (name,params) VALUES (?, ?)", (filter_name,filter_params))
 
-def db_save_measurments_results(cursor,id,H0,H1,H0_R,H0_G,H0_B,psnr,bit_perfect,hash_equal,compression_format,file_size_bytes,compression_ratio,bpp):
-    cursor.execute("INSERT INTO measurments_results (id,H0,H1,H0_R,H0_G,H0_B,psnr,bit_perfect,hash_equal,format,file_size_bytes,compression_ratio,bpp) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)", (id,H0,H1,H0_R,H0_G,H0_B,psnr,bit_perfect,hash_equal,compression_format,file_size_bytes,compression_ratio,bpp))
+def db_save_measurments_results(cursor,H0,H1,H0_R,H0_G,H0_B,psnr,bit_perfect,hash_equal,compression_format,file_size_bytes,compression_ratio,bpp):
+    cursor.execute("INSERT INTO measurments_results (H0,H1,H0_R,H0_G,H0_B,psnr,bit_perfect,hash_equal,format,file_size_bytes,compression_ratio,bpp) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)", (H0,H1,H0_R,H0_G,H0_B,psnr,bit_perfect,hash_equal,compression_format,file_size_bytes,compression_ratio,bpp))

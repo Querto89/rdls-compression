@@ -30,7 +30,7 @@ def compare_images(img_org: np.ndarray, img_rec: np.ndarray):
         "psnr": psnr,
         "same_shape": bit_acc,
         "bit_perfect": bit_perfect,
-        "hash_check": hash_check,
+        "hash_equal": hash_check,
         "max_diff": max_diff,
         "nonzero_diff": nonzero,
     }
